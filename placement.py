@@ -4,45 +4,15 @@ from neo4j import GraphDatabase
 import networkx as nx
 import pandas as pd
 
-
-import GreedyCommunityConstrained as GreedyCommunityConstrained
+#import GreedyCommunityConstrained as GreedyCommunityConstrained
 import neo4j_utils_eng
 
-driver = GraphDatabase.driver('bolt://localhost:7687', auth=("neo4j", "password"))
+
+# # @TODO togliere da qui il driver
+# driver = GraphDatabase.driver('bolt://localhost:7687', auth=("neo4j", "password"))
 
 
-def prepare_placements():
-    query = """
-        MATCH (n) WHERE NOT (n:Anchor) RETURN *
-        """
 
-    results = driver.session().run(query)
-    nodes = list(results.graph()._nodes.values())
-    placements = []
-    for node in nodes:
-        name = node._properties['name']
-        # if name.endswith("-DB"):
-        # name = name.replace("-service-DB", "-mongo")
-        community = node._properties['community']
-        placements.append({
-            "serviceId": name,
-            "nodeId": f"{community}"
-        })
-
-
-    return placements
-
-def calculate_deployments(services, edges, db_node_mapping, node_info):
-    neo4j_utils_eng.load_all(services, edges, db_node_mapping, node_info)
-    print("***************** CONSTRAINED GREEDY *********************")
-    start = time.time()
-    GreedyCommunityConstrained.mark_communities()
-    end = time.time()
-    print(f"Community marking tooks: {end - start}")
-
-    placements = prepare_placements()
-
-    return placements
 
 
 

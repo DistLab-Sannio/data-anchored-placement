@@ -1,0 +1,44 @@
+# This file is a template, and might need editing before it works on your project.
+# To contribute improvements to CI/CD templates, please follow the Development guide at:
+# https://docs.gitlab.com/ee/development/cicd/templates.html
+# This specific template is located at:
+# https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Getting-Started.gitlab-ci.yml
+
+# This is a sample GitLab CI/CD configuration file that should run without any modifications.
+# It demonstrates a basic 3 stage CI/CD pipeline. Instead of real tests or scripts,
+# it uses echo commands to simulate the pipeline execution.
+#
+# A pipeline is composed of independent jobs that run scripts, grouped into stages.
+# Stages run in sequential order, but jobs within stages run in parallel.
+#
+# For more information, see: https://docs.gitlab.com/ee/ci/yaml/index.html#stages
+
+stages:          # List of stages for jobs, and their order of execution
+  - build
+
+build-job:       # This job runs in the build stage, which runs first.
+  image: docker
+  services:
+    - docker:dind
+  stage: build
+  before_script:
+    - docker info
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  script:
+    - |
+      if [[ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ]]; then
+        tag=""
+        echo "Running on default branch '$CI_DEFAULT_BRANCH': tag = 'latest'"
+      else
+        tag=":$CI_COMMIT_REF_SLUG"
+        echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
+      fi
+    - docker build -t "$CI_REGISTRY_IMAGE${tag}" .
+    - docker push "$CI_REGISTRY_IMAGE${tag}"
+    - echo "Compile complete."
+
+  rules:
+    - if: $CI_COMMIT_BRANCH
+      exists:
+        - Dockerfile
+

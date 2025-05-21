@@ -52,7 +52,7 @@ The algorithm primarily relies on Neo4j queries, optimized for graph-based proce
 - OpenTelemetry Collector: Configured to collect application traces and forward them to Grafana Tempo.
 - Grafana Tempo: Set up to process incoming traces and generate relevant metrics.
 - Prometheus: Used to store and retrieve the generated metrics.
-- Python Configuration: Ensure the correct addresses for Prometheus and Neo4j are specified in the Python configuration files.
+- Python Configuration: Ensure the correct addresses for Prometheus and Neo4j are specified in environment variables.
 - JSON Request Structure: Databases in the request JSON must have names ending with 'db'. 
 This allows the algorithm to identify and ‘anchor’ them to nodes based on their region.
 

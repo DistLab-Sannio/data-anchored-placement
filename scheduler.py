@@ -1,16 +1,23 @@
-
+import os
 from flask import Flask, request, jsonify
 from prometheus_api_client import PrometheusConnect
 
-import placement as pl
-
+from GreedyCommunityConstrained import GreedyCommunityConstrained
+from neo4j import GraphDatabase
 
 app = Flask(__name__)
 
+PROMETHEUS_URL = os.environ.get('PROMETHEUS_URL') if os.environ.get('PROMETHEUS_URL') else "http://prometheus:9090"
+NEO4J_URL = os.environ.get('NEO4J_URL') if os.environ.get('NEO4J_URL') else 'neo4j://localhost:7687'
+NEO4J_USER = os.environ.get('NEO4J_USER') if os.environ.get('NEO4J_USER') else 'neo4j'
+NEO4J_PASSWORD= os.environ.get('NEO4J_PASSWORD') if os.environ.get('NEO4J_PASSWORD') else 'password'
 
-PROMETHEUS_URL = "http://172.31.1.212:31300"
 prometheus = PrometheusConnect(url=PROMETHEUS_URL, disable_ssl=True)
+driver = GraphDatabase.driver(NEO4J_URL, auth=(NEO4J_USER, NEO4J_PASSWORD))
 
+@app.route('/health', methods=['GET'])
+def health():
+    return "OK"
 
 
 @app.route('/placement', methods=['POST'])
@@ -34,6 +41,8 @@ def placement():
 
     db_services = {}
     for service in data["application"].get("services", []):
+
+        # TODO ancorare tutto ciò che ha una region specificata e non solo ciò che finisce con db
         if service["serviceId"].endswith("db"):
             positions = service["constraints"].get("positions", [])
             db_services[service["serviceId"]] = [
@@ -58,7 +67,9 @@ def placement():
         for node in infrastructure_data
     ]
 
-    placements = pl.calculate_deployments(services, edges, db_node_mapping, node_info)
+    greedy_manager = GreedyCommunityConstrained([node["nodeId"] for node in node_info], driver)
+
+    placements = greedy_manager.calculate_deployments(greedy_manager, services, edges, db_node_mapping, node_info)
 
     response = {
         "appId": data.get("application", {}).get("appId", "unknown"),
@@ -69,4 +80,4 @@ def placement():
 
 
 if __name__ == '__main__':
-    app.run(port=5001, debug=True)
+    app.run(host='0.0.0.0', port=5001, debug=True)
