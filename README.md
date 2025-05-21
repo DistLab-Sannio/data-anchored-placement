@@ -1,5 +1,7 @@
 # data-anchored-placement
 
+[kubernetes deployment](#deploy-on-kubernetes)
+
 The placement algorithm leverages runtime information about interactions between microservices. 
 For this reason, it is essential to have a pipeline for acquiring metrics related to traces.
 
@@ -51,8 +53,18 @@ The algorithm primarily relies on Neo4j queries, optimized for graph-based proce
 - OpenTelemetry Collector: Configured to collect application traces and forward them to Grafana Tempo.
 - Grafana Tempo: Set up to process incoming traces and generate relevant metrics.
 - Prometheus: Used to store and retrieve the generated metrics.
-- Python Configuration: Ensure the correct addresses for Prometheus and Neo4j are specified in environment variables (in k8s yaml files).
+- Python Configuration: Ensure the correct addresses for Prometheus and Neo4j are specified in environment variables.
 - JSON Request Structure: Databases in the request JSON must have names ending with 'db'. 
 This allows the algorithm to identify and ‘anchor’ them to nodes based on their region.
 
 ![alt text](doc/req.png)
+
+
+# Deploy on Kubernetes
+
+- Apply all yaml manifest in k8s folder creating a dedicated namespace (or using the same for all).
+- Ensure the correct addresses for Neo4j and Prometheus that stores Tempo metrics are specified in environment variables (in k8s/placement.yml files).
+- If you want to use Istio as trace generator, follow the [install-istio.md](k8s/install-istio.md) guide specifying for IstioOperator configuration the namespace containing the opentelemetry collector address.
+- Contact on `http://<IP>:<PLACEMENT NODEPORT>/placement`.
+- JSON Request Structure: Databases in the request JSON must have names ending with 'db'. 
+This allows the algorithm to identify and ‘anchor’ them to nodes based on their region.

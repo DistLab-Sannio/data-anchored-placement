@@ -12,8 +12,13 @@ NEO4J_URL = os.environ.get('NEO4J_URL') if os.environ.get('NEO4J_URL') else 'neo
 NEO4J_USER = os.environ.get('NEO4J_USER') if os.environ.get('NEO4J_USER') else 'neo4j'
 NEO4J_PASSWORD= os.environ.get('NEO4J_PASSWORD') if os.environ.get('NEO4J_PASSWORD') else 'password'
 
+print(f'PROMETHEUS_URL: {PROMETHEUS_URL}')
+print(f'NEO4J_URL: {NEO4J_URL}')
+print(f'NEO4J_USER: {NEO4J_USER}')
+print(f'NEO4J_PASSWORD: {NEO4J_PASSWORD}')
+
 prometheus = PrometheusConnect(url=PROMETHEUS_URL, disable_ssl=True)
-driver = GraphDatabase.driver(NEO4J_URL, auth=(NEO4J_USER, NEO4J_PASSWORD))
+driver = GraphDatabase.driver(uri=NEO4J_URL, auth=(NEO4J_USER, NEO4J_PASSWORD))
 
 @app.route('/health', methods=['GET'])
 def health():
@@ -43,6 +48,8 @@ def placement():
     for service in data["application"].get("services", []):
 
         # TODO ancorare tutto ciò che ha una region specificata e non solo ciò che finisce con db
+        # TODO un servizio con più region o una region con più nodi
+        # TODO se un nodo non ha nessuno ancorato, non viene assegnato nessuno a quel nodo
         if service["serviceId"].endswith("db"):
             positions = service["constraints"].get("positions", [])
             db_services[service["serviceId"]] = [

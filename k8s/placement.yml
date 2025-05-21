@@ -14,12 +14,12 @@ spec:
     spec:
       containers:
         - name: data-anchored-placement
-          image: hashicorp/http-echo
+          image: gitlab.services.ding.unisannio.it:5050/distlab/data-anchored-placement:latest
           env:
             - name: PROMETHEUS_URL
-              value: ""
+              value: "http://prometheus-tempo:9090"
             - name: NEO4J_URL
-              value: ""
+              value: "bolt://neo4j:7687"
             - name: NEO4J_USER
               value: "neo4j"
             - name: NEO4J_PASSWORD

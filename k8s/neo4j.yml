@@ -278,7 +278,7 @@ metadata:
     helm.neo4j.com/service: "default"
 spec:
   publishNotReadyAddresses: false
-  type: NodePort
+  type: ClusterIP
   selector:
     app: "neo4j"
     helm.neo4j.com/instance: "neo4j"
@@ -305,7 +305,7 @@ metadata:
     helm.neo4j.com/service: "admin"
 spec:
   publishNotReadyAddresses: true
-  type: "ClusterIP"
+  type: ClusterIP
   selector:
     app: "neo4j"
     helm.neo4j.com/instance: "neo4j"

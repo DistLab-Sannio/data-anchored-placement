@@ -1,0 +1,6 @@
+.idea
+
+__pycache__
+
+k8s/istio-1.26.0
+
