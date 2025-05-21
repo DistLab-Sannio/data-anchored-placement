@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: data-anchored-placement
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: data-anchored-placement
+  template:
+    metadata:
+      labels:
+        app: data-anchored-placement
+    spec:
+      containers:
+        - name: data-anchored-placement
+          image: hashicorp/http-echo
+          env:
+            - name: PROMETHEUS_URL
+              value: ""
+            - name: NEO4J_URL
+              value: ""
+            - name: NEO4J_USER
+              value: "neo4j"
+            - name: NEO4J_PASSWORD
+              value: "password"
+          ports:
+            - containerPort: 5001
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: data-anchored-placement
+spec:
+  selector:
+    app: data-anchored-placement
+  ports:
+    - protocol: TCP
+      port: 5001
+      targetPort: 5001
+  type: NodePort
+

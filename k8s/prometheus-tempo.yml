@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-tempo-configmap
+data:
+  prometheus.yaml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+    scrape_configs:
+      - job_name: 'prometheus'
+        static_configs:
+          - targets: [ 'localhost:9090' ]
+      - job_name: 'tempo'
+        static_configs:
+          - targets: [ 'tempo:3100' ]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-tempo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus-tempo
+  template:
+    metadata:
+      labels:
+        app: prometheus-tempo
+    spec:
+      imagePullSecrets:
+        - name: docker-hub-secret
+      containers:
+      - name: grafana-tempo
+        args:
+        - --config.file=/conf/prometheus.yaml
+        - --web.enable-remote-write-receiver
+        - --enable-feature=exemplar-storage
+        - --storage.tsdb.retention.time=30d
+        image: prom/prometheus:latest
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+        - mountPath: /conf
+          name: prometheus-tempo-config-volume
+      volumes:
+        - name: prometheus-tempo-config-volume
+          configMap:
+            defaultMode: 420
+            name: prometheus-tempo-configmap
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-tempo
+spec:
+  selector:
+    app: prometheus-tempo
+  type: NodePort
+  ports:
+    - name: http
+      protocol: TCP
+      port: 9090
+      targetPort: 9090
+      nodePort: 31300

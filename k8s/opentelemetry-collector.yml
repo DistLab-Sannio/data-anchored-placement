@@ -1,0 +1,131 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: opentelemetry-collector
+  name: opentelemetry-collector-conf
+data:
+  opentelemetry-collector-config: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+    processors:
+      batch:
+    exporters:
+      zipkin:
+        # Export to zipkin for easy querying
+        endpoint: http://zipkin:9411/api/v2/spans
+      jaeger:
+        endpoint: jaeger-all-in-one:14250
+        tls:
+          insecure: true
+        sending_queue:
+          enabled: true
+        retry_on_failure:
+          enabled: true
+      otlp:
+        endpoint: tempo:4317
+        tls:
+          insecure: true
+    extensions:
+      health_check:
+        port: 13133
+    service:
+      extensions:
+      - health_check
+      pipelines:
+        traces:
+          receivers:
+          - otlp
+          exporters:
+          - zipkin
+          - jaeger
+          - otlp
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opentelemetry-collector
+spec:
+  selector:
+    matchLabels:
+      app: opentelemetry-collector
+  template:
+    metadata:
+      labels:
+        app: opentelemetry-collector
+        sidecar.istio.io/inject: "false" # do not inject
+    spec:
+      containers:
+        - command:
+            - "/otelcol"
+            - "--config=/conf/opentelemetry-collector-config.yaml"
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+          image: otel/opentelemetry-collector:0.54.0
+          imagePullPolicy: IfNotPresent
+          name: opentelemetry-collector
+          ports:
+            - containerPort: 4317
+              protocol: TCP
+            - containerPort: 4318
+              protocol: TCP
+            - name: grpc-opencensus
+              containerPort: 55678
+              protocol: TCP
+          resources:
+            limits:
+              cpu: "2"
+              memory: 4Gi
+            requests:
+              cpu: 200m
+              memory: 400Mi
+          volumeMounts:
+            - name: opentelemetry-collector-config-vol
+              mountPath: /conf
+      volumes:
+        - configMap:
+            defaultMode: 420
+            items:
+              - key: opentelemetry-collector-config
+                path: opentelemetry-collector-config.yaml
+            name: opentelemetry-collector-conf
+          name: opentelemetry-collector-config-vol
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: opentelemetry-collector
+  labels:
+    app: opentelemetry-collector
+spec:
+  ports:
+    - name: grpc-opencensus
+      port: 55678
+      protocol: TCP
+      targetPort: 55678
+    - name: grpc-otlp # Default endpoint for OpenTelemetry receiver.
+      port: 4317
+      protocol: TCP
+      targetPort: 4317
+    - name: http-otlp # HTTP endpoint for OpenTelemetry receiver.
+      port: 4318
+      protocol: TCP
+      targetPort: 4318
+  selector:
+    app: opentelemetry-collector
