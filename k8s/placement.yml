@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: data-anchored-placement
-          image: gitlab.services.ding.unisannio.it:5050/distlab/data-anchored-placement:latest
+          image: <PLACEMENT IMAGE>:latest
           env:
             - name: PROMETHEUS_URL
               value: "http://prometheus-tempo:9090"
